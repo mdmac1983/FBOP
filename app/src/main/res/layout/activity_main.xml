@@ -45,7 +45,6 @@
     </LinearLayout>
 
     <include
-        android:id="@+id/folderOverlayInclude"
         layout="@layout/folder_overlay"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
