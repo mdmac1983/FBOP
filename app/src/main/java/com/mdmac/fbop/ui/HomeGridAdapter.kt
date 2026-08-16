@@ -1,134 +1,149 @@
 package com.mdmac.fbop.ui
 
 import android.content.Context
-import android.net.Uri
+import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.GridLayout
-import android.widget.ImageView
-import android.widget.TextView
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.mdmac.fbop.R
 import com.mdmac.fbop.model.AppInfo
 import com.mdmac.fbop.model.FolderInfo
 import com.mdmac.fbop.model.HomeGridItem
+import kotlin.math.abs
 
-class HomeGridAdapter(
-    private val context: Context,
-    private var items: MutableList<HomeGridItem>,
+class HomePagerAdapter(
+    private val pages: List<MutableList<HomeGridItem>>,
+    private val columns: Int,
     private val appLookup: (String) -> AppInfo?,
     private val onAppClick: (AppInfo) -> Unit,
-    private val onAppDragStart: (RecyclerView.ViewHolder) -> Unit,
+    private val onAppOptionsRequested: (AppInfo) -> Unit,
     private val onFolderClick: (FolderInfo) -> Unit,
-    private val onFolderDragStart: (RecyclerView.ViewHolder) -> Unit
-) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    private val onFolderOptionsRequested: (FolderInfo) -> Unit,
+    private val onMergeRequested: (pageIndex: Int, fromItem: HomeGridItem, toItem: HomeGridItem) -> Unit,
+    private val onReordered: (pageIndex: Int, newOrder: List<HomeGridItem>) -> Unit,
+    private val onSwipeUpRequested: () -> Unit,
+    private val onEmptySpaceLongPress: () -> Unit,
+    private val onTwoFingerLongPress: () -> Unit
+) : RecyclerView.Adapter<HomePagerAdapter.PageViewHolder>() {
 
     companion object {
-        private const val TYPE_APP = 0
-        private const val TYPE_FOLDER = 1
+        private const val SWIPE_UP_THRESHOLD = 100
+        private const val SWIPE_UP_VELOCITY_THRESHOLD = 100
     }
 
-    class AppViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val icon: ImageView = view.findViewById(R.id.appIcon)
-        val label: TextView = view.findViewById(R.id.appLabel)
+    class PageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val grid: RecyclerView = view.findViewById(R.id.homePageGrid)
     }
 
-    class FolderViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val customIcon: ImageView = view.findViewById(R.id.folderCustomIcon)
-        val previewGrid: GridLayout = view.findViewById(R.id.folderPreviewGrid)
-        val label: TextView = view.findViewById(R.id.folderLabel)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PageViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.page_home, parent, false)
+        return PageViewHolder(view)
     }
 
-    override fun getItemViewType(position: Int): Int = when (items[position]) {
-        is HomeGridItem.AppItem -> TYPE_APP
-        is HomeGridItem.FolderItem -> TYPE_FOLDER
-    }
+    override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
+        val context = holder.itemView.context
+        val pageItems = pages[position]
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val inflater = LayoutInflater.from(context)
-        return if (viewType == TYPE_APP) {
-            AppViewHolder(inflater.inflate(R.layout.item_app_icon, parent, false))
-        } else {
-            FolderViewHolder(inflater.inflate(R.layout.item_folder_icon, parent, false))
-        }
-    }
+        lateinit var touchHelper: ItemTouchHelper
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        when (val item = items[position]) {
-            is HomeGridItem.AppItem -> bindApp(holder as AppViewHolder, item.app)
-            is HomeGridItem.FolderItem -> bindFolder(holder as FolderViewHolder, item.folder)
-        }
-    }
+        val adapter = HomeGridAdapter(
+            context = context,
+            items = pageItems,
+            appLookup = appLookup,
+            onAppClick = onAppClick,
+            onAppDragStart = { viewHolder -> touchHelper.startDrag(viewHolder) },
+            onFolderClick = onFolderClick,
+            onFolderDragStart = { viewHolder -> touchHelper.startDrag(viewHolder) }
+        )
 
-    private fun bindApp(holder: AppViewHolder, app: AppInfo) {
-        holder.label.text = app.displayLabel
-        setIcon(holder.icon, app)
-
-        holder.itemView.setOnClickListener { onAppClick(app) }
-        holder.itemView.setOnLongClickListener {
-            onAppDragStart(holder)
-            true
-        }
-    }
-
-    private fun bindFolder(holder: FolderViewHolder, folder: FolderInfo) {
-        holder.label.text = folder.name
-
-        if (folder.iconUri != null) {
-            holder.customIcon.visibility = View.VISIBLE
-            holder.previewGrid.visibility = View.GONE
-            try {
-                holder.customIcon.setImageURI(Uri.parse(folder.iconUri))
-            } catch (e: Exception) {
-                holder.customIcon.visibility = View.GONE
-                holder.previewGrid.visibility = View.VISIBLE
-            }
-        } else {
-            holder.customIcon.visibility = View.GONE
-            holder.previewGrid.visibility = View.VISIBLE
-            holder.previewGrid.removeAllViews()
-
-            folder.appComponentKeys.take(4).mapNotNull { appLookup(it) }.forEach { app ->
-                val mini = ImageView(context).apply {
-                    layoutParams = GridLayout.LayoutParams().apply {
-                        width = 18
-                        height = 18
-                    }
+        val callback = HomeGridDragCallback(
+            adapter = adapter,
+            onReordered = { onReordered(position, adapter.getItems()) },
+            onMergeRequested = { fromPos, toPos ->
+                val fromItem = adapter.getItemAt(fromPos)
+                val toItem = adapter.getItemAt(toPos)
+                if (fromItem != null && toItem != null) {
+                    onMergeRequested(position, fromItem, toItem)
                 }
-                setIcon(mini, app)
-                holder.previewGrid.addView(mini)
+            },
+            onLongPressReleasedWithoutMove = { pos ->
+                when (val item = adapter.getItemAt(pos)) {
+                    is HomeGridItem.AppItem -> onAppOptionsRequested(item.app)
+                    is HomeGridItem.FolderItem -> onFolderOptionsRequested(item.folder)
+                    null -> {}
+                }
             }
-        }
+        )
+        touchHelper = ItemTouchHelper(callback)
+        touchHelper.attachToRecyclerView(holder.grid)
 
-        holder.itemView.setOnClickListener { onFolderClick(folder) }
-        holder.itemView.setOnLongClickListener {
-            onFolderDragStart(holder)
-            true
-        }
+        holder.grid.layoutManager = GridLayoutManager(context, columns)
+        holder.grid.adapter = adapter
+
+        setupGestureWatcher(holder, context)
     }
 
-    private fun setIcon(imageView: ImageView, app: AppInfo) {
-        if (app.customIconUri != null) {
-            try {
-                imageView.setImageURI(Uri.parse(app.customIconUri))
-                return
-            } catch (e: Exception) {
-                // fall through to system icon
+    /**
+     * Watches touch events on this page's grid WITHOUT intercepting them, so normal
+     * clicks/scrolling/dragging keep working. This is the fix for swipe-up and long-press
+     * on empty space being swallowed by the RecyclerView before they could reach a
+     * parent-level listener.
+     */
+    private fun setupGestureWatcher(holder: PageViewHolder, context: Context) {
+        var activePointerCount = 1
+
+        val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+
+            override fun onLongPress(e: MotionEvent) {
+                val childUnderTouch = holder.grid.findChildViewUnder(e.x, e.y)
+                if (childUnderTouch != null) return // let the item's own long-click handle it
+
+                if (activePointerCount >= 2) {
+                    onTwoFingerLongPress()
+                } else {
+                    onEmptySpaceLongPress()
+                }
             }
-        }
-        imageView.setImageDrawable(app.systemIcon)
+
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                if (e1 == null) return false
+                val deltaY = e2.y - e1.y
+                val deltaX = e2.x - e1.x
+
+                if (abs(deltaY) > abs(deltaX) &&
+                    deltaY < -SWIPE_UP_THRESHOLD &&
+                    abs(velocityY) > SWIPE_UP_VELOCITY_THRESHOLD
+                ) {
+                    onSwipeUpRequested()
+                    return true
+                }
+                return false
+            }
+        })
+
+        holder.grid.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                when (e.actionMasked) {
+                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN ->
+                        activePointerCount = e.pointerCount
+                    MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_UP ->
+                        activePointerCount = (e.pointerCount - 1).coerceAtLeast(1)
+                }
+                gestureDetector.onTouchEvent(e)
+                return false // never actually intercept — just observe
+            }
+        })
     }
 
-    override fun getItemCount() = items.size
-
-    fun getItems(): List<HomeGridItem> = items
-
-    fun getItemAt(position: Int): HomeGridItem? = items.getOrNull(position)
-
-    fun moveItem(fromPosition: Int, toPosition: Int) {
-        val item = items.removeAt(fromPosition)
-        items.add(toPosition, item)
-        notifyItemMoved(fromPosition, toPosition)
-    }
+    override fun getItemCount() = pages.size
 }
