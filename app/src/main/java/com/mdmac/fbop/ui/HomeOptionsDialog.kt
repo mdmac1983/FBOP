@@ -12,6 +12,8 @@ class HomeOptionsDialog(
 ) {
 
     fun show() {
+        if (!prefsManager.longPressShowHomeOptions) return
+
         val options = mutableListOf("Change wallpaper")
         if (prefsManager.settingsAccessibleViaLongPress) {
             options.add("Settings")
