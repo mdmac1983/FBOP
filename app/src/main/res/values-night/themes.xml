@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.FBOP" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="searchBarBaseColor">@color/search_bar_bg_dark</item>
+        <item name="android:textColorPrimary">@color/search_bar_text_dark</item>
+    </style>
+
+</resources>
