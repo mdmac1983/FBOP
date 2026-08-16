@@ -8,9 +8,7 @@ class FbopApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
-
-        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+        Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
             try {
                 val stackTrace = android.util.Log.getStackTraceString(throwable)
 
