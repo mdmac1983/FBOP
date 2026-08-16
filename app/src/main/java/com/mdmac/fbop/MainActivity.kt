@@ -3,13 +3,11 @@ package com.mdmac.fbop
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.GestureDetector
-import android.view.Gravity
-import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.view.Gravity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -28,7 +26,6 @@ import com.mdmac.fbop.ui.AppOptionsDialog
 import com.mdmac.fbop.ui.FolderOverlayController
 import com.mdmac.fbop.ui.HomeOptionsDialog
 import com.mdmac.fbop.ui.HomePagerAdapter
-import kotlin.math.abs
 
 class MainActivity : AppCompatActivity() {
 
@@ -43,11 +40,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var homeViewPager: ViewPager2
     private lateinit var pageIndicatorContainer: LinearLayout
     private lateinit var pinnedRowRecyclerView: RecyclerView
-    private lateinit var rootLayout: View
 
     private var dotViews: List<ImageView> = emptyList()
-    private lateinit var gestureDetector: GestureDetector
-    private var activePointerCount = 1
 
     private var pendingIconEditApp: AppInfo? = null
     private val pickIconLauncher = registerForActivityResult(
@@ -67,11 +61,6 @@ class MainActivity : AppCompatActivity() {
         pendingIconEditApp = null
     }
 
-    companion object {
-        private const val SWIPE_UP_THRESHOLD = 100
-        private const val SWIPE_UP_VELOCITY_THRESHOLD = 100
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -84,7 +73,6 @@ class MainActivity : AppCompatActivity() {
         homeViewPager = findViewById(R.id.homeViewPager)
         pageIndicatorContainer = findViewById(R.id.pageIndicatorContainer)
         pinnedRowRecyclerView = findViewById(R.id.pinnedRowRecyclerView)
-        rootLayout = findViewById(R.id.rootLayout)
 
         val overlayRoot = findViewById<View>(R.id.folderOverlayRoot)
         val folderTitle = findViewById<TextView>(R.id.folderTitle)
@@ -117,7 +105,6 @@ class MainActivity : AppCompatActivity() {
         applyStatusBarVisibility()
         refreshHomeScreen()
         setupPinnedRow()
-        setupSwipeUpGesture()
     }
 
     override fun onResume() {
@@ -130,61 +117,9 @@ class MainActivity : AppCompatActivity() {
         setupHomePages()
     }
 
-    private fun setupSwipeUpGesture() {
-        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-
-            override fun onLongPress(e: MotionEvent) {
-                if (folderOverlayController.isOpen()) return
-
-                if (activePointerCount >= 2 && prefsManager.touchBlockGestureEnabled) {
-                    if (touchBlockController.isAccessibilityServiceEnabled()) {
-                        touchBlockController.startTouchBlock()
-                    } else {
-                        touchBlockController.openAccessibilitySettings()
-                    }
-                } else if (activePointerCount == 1) {
-                    homeOptionsDialog.show()
-                }
-            }
-
-            override fun onFling(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
-            ): Boolean {
-                if (e1 == null) return false
-                if (folderOverlayController.isOpen()) return false
-
-                val deltaY = e2.y - e1.y
-                val deltaX = e2.x - e1.x
-
-                if (abs(deltaY) > abs(deltaX) &&
-                    deltaY < -SWIPE_UP_THRESHOLD &&
-                    abs(velocityY) > SWIPE_UP_VELOCITY_THRESHOLD
-                ) {
-                    openDrawer()
-                    return true
-                }
-                return false
-            }
-        })
-
-        rootLayout.setOnTouchListener { _, event ->
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN ->
-                    activePointerCount = event.pointerCount
-                MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_UP ->
-                    activePointerCount = (event.pointerCount - 1).coerceAtLeast(1)
-            }
-            gestureDetector.onTouchEvent(event)
-        }
-    }
-
     private fun openDrawer() {
         val intent = Intent(this, DrawerActivity::class.java)
         startActivity(intent)
-        overridePendingTransition(android.R.anim.fade_in, 0)
     }
 
     private fun applyStatusBarVisibility() {
@@ -243,7 +178,23 @@ class MainActivity : AppCompatActivity() {
             onFolderClick = { folder -> folderOverlayController.open(folder) },
             onFolderOptionsRequested = { folder -> showFolderOptions(folder) },
             onMergeRequested = { _, fromItem, toItem -> handleMergeRequest(fromItem, toItem) },
-            onReordered = { _, _ -> /* Manual ordering persistence — future enhancement */ }
+            onReordered = { _, _ -> /* Manual ordering persistence — future enhancement */ },
+            onSwipeUpRequested = {
+                if (!folderOverlayController.isOpen()) openDrawer()
+            },
+            onEmptySpaceLongPress = {
+                if (!folderOverlayController.isOpen()) homeOptionsDialog.show()
+            },
+            onTwoFingerLongPress = {
+                if (folderOverlayController.isOpen()) return@HomePagerAdapter
+                if (prefsManager.touchBlockGestureEnabled) {
+                    if (touchBlockController.isAccessibilityServiceEnabled()) {
+                        touchBlockController.startTouchBlock()
+                    } else {
+                        touchBlockController.openAccessibilitySettings()
+                    }
+                }
+            }
         )
 
         setupPageIndicator(pages.size)
