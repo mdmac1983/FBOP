@@ -122,6 +122,7 @@ class MainActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
+    @Suppress("DEPRECATION")
     private fun applyStatusBarVisibility() {
         if (prefsManager.statusBarVisible) {
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
