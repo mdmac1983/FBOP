@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FBOP</string>
+    <string name="touch_block_service_description">Lets FBOP show a screen overlay that blocks accidental touches when you turn on Touch Block in Settings.</string>
+</resources>
