@@ -16,6 +16,8 @@ class AppOptionsDialog(
 ) {
 
     fun show(app: AppInfo) {
+        if (!prefsManager.longPressShowAppOptions) return
+
         val isPinned = prefsManager.pinnedApps.contains(app.componentKey)
         val isHidden = prefsManager.hiddenApps.contains(app.componentKey)
 
