@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -93,8 +94,19 @@ class HomePagerAdapter(
 
         val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
 
+            override fun onDown(e: MotionEvent): Boolean {
+                Toast.makeText(context, "DEBUG: touch down received", Toast.LENGTH_SHORT).show()
+                return true
+            }
+
             override fun onLongPress(e: MotionEvent) {
                 val childUnderTouch = holder.grid.findChildViewUnder(e.x, e.y)
+                Toast.makeText(
+                    context,
+                    "DEBUG: long press fired, childUnderTouch=${childUnderTouch != null}, pointers=$activePointerCount",
+                    Toast.LENGTH_LONG
+                ).show()
+
                 if (childUnderTouch != null) return
 
                 if (activePointerCount >= 2) {
@@ -113,6 +125,12 @@ class HomePagerAdapter(
                 if (e1 == null) return false
                 val deltaY = e2.y - e1.y
                 val deltaX = e2.x - e1.x
+
+                Toast.makeText(
+                    context,
+                    "DEBUG: fling deltaY=${deltaY.toInt()} velocityY=${velocityY.toInt()}",
+                    Toast.LENGTH_LONG
+                ).show()
 
                 if (abs(deltaY) > abs(deltaX) &&
                     deltaY < -SWIPE_UP_THRESHOLD &&
