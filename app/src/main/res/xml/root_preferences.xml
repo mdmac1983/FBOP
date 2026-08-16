@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res/app">
+
+    <PreferenceCategory android:title="Home Screen Grid">
+
+        <SeekBarPreference
+            android:key="home_columns"
+            android:title="Home columns"
+            android:defaultValue="4"
+            android:max="8"
+            app:min="2"
+            app:showSeekBarValue="true" />
+
+        <SeekBarPreference
+            android:key="home_rows"
+            android:title="Home rows"
+            android:defaultValue="5"
+            android:max="10"
+            app:min="2"
+            app:showSeekBarValue="true" />
+
+        <SwitchPreferenceCompat
+            android:key="layout_locked"
+            android:title="Lock home screen layout"
+            android:summary="Prevent moving or editing icons on the home screen"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="status_bar_visible"
+            android:title="Show status bar"
+            android:summary="Display clock, battery, and notification icons"
+            android:defaultValue="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="App Drawer">
+
+        <SeekBarPreference
+            android:key="drawer_columns"
+            android:title="Drawer columns"
+            android:defaultValue="4"
+            android:max="8"
+            app:min="2"
+            app:showSeekBarValue="true" />
+
+        <SeekBarPreference
+            android:key="drawer_rows"
+            android:title="Drawer rows"
+            android:defaultValue="6"
+            android:max="12"
+            app:min="2"
+            app:showSeekBarValue="true" />
+
+        <SeekBarPreference
+            android:key="search_bar_alpha"
+            android:title="Search bar transparency"
+            android:summary="Adjusts how see-through the search bar background is"
+            android:defaultValue="180"
+            android:max="255"
+            app:min="0"
+            app:showSeekBarValue="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Pinned Row">
+
+        <SeekBarPreference
+            android:key="pinned_count"
+            android:title="Number of pinned apps"
+            android:defaultValue="5"
+            android:max="8"
+            app:min="1"
+            app:showSeekBarValue="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Appearance">
+
+        <ListPreference
+            android:key="theme_mode"
+            android:title="Theme"
+            android:defaultValue="light"
+            android:entries="@array/theme_mode_entries"
+            android:entryValues="@array/theme_mode_values" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Settings Access">
+
+        <SwitchPreferenceCompat
+            android:key="settings_via_drawer"
+            android:title="Show Settings in app drawer / menu"
+            android:defaultValue="true" />
+
+        <SwitchPreferenceCompat
+            android:key="settings_via_longpress"
+            android:title="Show Settings on long-press home screen"
+            android:defaultValue="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Long-Press Menu">
+
+        <SwitchPreferenceCompat
+            android:key="longpress_show_home_options"
+            android:title="Show home screen options"
+            android:summary="Wallpaper, add widget, etc."
+            android:defaultValue="true" />
+
+        <SwitchPreferenceCompat
+            android:key="longpress_show_app_options"
+            android:title="Show app options"
+            android:summary="Uninstall, app info, remove"
+            android:defaultValue="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Hidden Apps">
+
+        <EditTextPreference
+            android:key="hidden_folder_name"
+            android:title="Hidden folder name"
+            android:defaultValue="Hidden" />
+
+        <Preference
+            android:key="hidden_folder_icon"
+            android:title="Hidden folder icon"
+            android:summary="Tap to choose a custom icon (PNG/JPG/JPEG)" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Accessibility">
+
+        <SwitchPreferenceCompat
+            android:key="touchblock_gesture_enabled"
+            android:title="Enable touch-block gesture"
+            android:summary="Use a gesture to temporarily disable touch input"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="touchblock_triple_power_enabled"
+            android:title="Enable triple-tap power to toggle"
+            android:summary="Best-effort — detected via rapid screen-on events, not a guaranteed system hook"
+            android:defaultValue="false" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
