@@ -57,7 +57,7 @@ class DrawerActivity : AppCompatActivity() {
             context = this,
             apps = allApps,
             onAppClick = { app -> launchApp(app) },
-            onAppLongClick = { app, view -> showAppOptions(app, view) }
+            onAppLongClick = { _, _ -> /* Long-press menu not used in drawer for now */ }
         )
         drawerGrid.adapter = adapter
     }
@@ -85,9 +85,5 @@ class DrawerActivity : AppCompatActivity() {
             startActivity(launchIntent)
             finish()
         }
-    }
-
-    private fun showAppOptions(app: AppInfo, anchor: android.view.View) {
-        // Wired up in a later step once AppOptionsDialog exists
     }
 }
