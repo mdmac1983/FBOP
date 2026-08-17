@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -28,7 +27,8 @@ class HomePagerAdapter(
     private val onReordered: (pageIndex: Int, newOrder: List<HomeGridItem>) -> Unit,
     private val onSwipeUpRequested: () -> Unit,
     private val onEmptySpaceLongPress: () -> Unit,
-    private val onTwoFingerLongPress: () -> Unit
+    private val onTwoFingerLongPress: () -> Unit,
+    private val onDebugMessage: (String) -> Unit
 ) : RecyclerView.Adapter<HomePagerAdapter.PageViewHolder>() {
 
     companion object {
@@ -95,17 +95,13 @@ class HomePagerAdapter(
         val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
 
             override fun onDown(e: MotionEvent): Boolean {
-                Toast.makeText(context, "DEBUG: touch down received", Toast.LENGTH_SHORT).show()
+                onDebugMessage("touch DOWN at (${e.x.toInt()},${e.y.toInt()})")
                 return true
             }
 
             override fun onLongPress(e: MotionEvent) {
                 val childUnderTouch = holder.grid.findChildViewUnder(e.x, e.y)
-                Toast.makeText(
-                    context,
-                    "DEBUG: long press fired, childUnderTouch=${childUnderTouch != null}, pointers=$activePointerCount",
-                    Toast.LENGTH_LONG
-                ).show()
+                onDebugMessage("LONG PRESS fired, onEmptySpace=${childUnderTouch == null}, pointers=$activePointerCount")
 
                 if (childUnderTouch != null) return
 
@@ -126,16 +122,13 @@ class HomePagerAdapter(
                 val deltaY = e2.y - e1.y
                 val deltaX = e2.x - e1.x
 
-                Toast.makeText(
-                    context,
-                    "DEBUG: fling deltaY=${deltaY.toInt()} velocityY=${velocityY.toInt()}",
-                    Toast.LENGTH_LONG
-                ).show()
+                val passed = abs(deltaY) > abs(deltaX) &&
+                        deltaY < -SWIPE_UP_THRESHOLD &&
+                        abs(velocityY) > SWIPE_UP_VELOCITY_THRESHOLD
 
-                if (abs(deltaY) > abs(deltaX) &&
-                    deltaY < -SWIPE_UP_THRESHOLD &&
-                    abs(velocityY) > SWIPE_UP_VELOCITY_THRESHOLD
-                ) {
+                onDebugMessage("FLING dY=${deltaY.toInt()} dX=${deltaX.toInt()} vY=${velocityY.toInt()} passed=$passed")
+
+                if (passed) {
                     onSwipeUpRequested()
                     return true
                 }
