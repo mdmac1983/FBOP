@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var homeViewPager: ViewPager2
     private lateinit var pageIndicatorContainer: LinearLayout
     private lateinit var pinnedRowRecyclerView: RecyclerView
+    private lateinit var debugStatusText: TextView
 
     private var dotViews: List<ImageView> = emptyList()
 
@@ -73,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         homeViewPager = findViewById(R.id.homeViewPager)
         pageIndicatorContainer = findViewById(R.id.pageIndicatorContainer)
         pinnedRowRecyclerView = findViewById(R.id.pinnedRowRecyclerView)
+        debugStatusText = findViewById(R.id.debugStatusText)
 
         val overlayRoot = findViewById<View>(R.id.folderOverlayRoot)
         val folderTitle = findViewById<TextView>(R.id.folderTitle)
@@ -195,7 +197,8 @@ class MainActivity : AppCompatActivity() {
                         touchBlockController.openAccessibilitySettings()
                     }
                 }
-            }
+            },
+            onDebugMessage = { message -> debugStatusText.text = "DEBUG: $message" }
         )
 
         setupPageIndicator(pages.size)
